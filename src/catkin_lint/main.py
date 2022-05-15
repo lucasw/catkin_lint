@@ -192,8 +192,16 @@ def run_linter(args):
         except IOError as err:
             sys.stderr.write("catkin_lint: cannot read '%s': %s\n" % (config_file, err))
             return 1
+
+    ros_package_paths = None
     if "ROS_PACKAGE_PATH" in os.environ:
-        config.read([os.path.join(d, ".catkin_lint") for d in os.environ["ROS_PACKAGE_PATH"].split(os.pathsep)])
+        ros_package_paths = os.environ["ROS_PACKAGE_PATH"].split(os.pathsep)
+        # debian package location
+        ros_package_paths.append("/usr/share")
+        # print(ros_package_paths)
+
+    if ros_package_paths is not None:
+        config.read([os.path.join(d, ".catkin_lint") for d in ros_package_paths])
     xdg_config_home = os.environ.get("XDG_CONFIG_HOME", "") or os.path.expanduser("~/.config")
     config.read(
         [
@@ -228,8 +236,8 @@ def run_linter(args):
     if "package_path" in config["catkin_lint"]:
         for path in config["catkin_lint"]["package_path"].split(os.pathsep):
             env.add_path(path)
-    if "ROS_PACKAGE_PATH" in os.environ:
-        for path in os.environ["ROS_PACKAGE_PATH"].split(os.pathsep):
+    if ros_package_paths is not None:
+        for path in ros_package_paths:
             env.add_path(path)
     for path in args.path:
         if not os.path.isdir(path):
